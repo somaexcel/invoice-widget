@@ -101,6 +101,190 @@
           <td><input type="text" value="${row.description}" onchange="updateField(${index}, 'description', this.value)"></td>
           <td><input type="number" min="1" value="${row.quantity}" onchange="updateField(${index}, 'quantity', this.value)"></td>
           <td><input type="number" min="0" step="0.01" value="${row.rate}" onchange="updateField(${index}, 'rate', this.value)"></td>
+          <td>${computedAmount}</td>
+          <td>
+            <select onchange="updateStatus(${index}, this.value)">
+              <option value="" ${row.status === '' ? 'selected' : ''}>--</option>
+              <option value="Sent to QB" ${row.status === 'Sent to QB' ? 'selected' : ''}>Sent to QB</option>
+              <option value="Invoice created" ${row.status === 'Invoice created' ? 'selected' : ''}>Invoice created</option>
+            </select>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function updateField(index, key, value) {
+      invoiceData[index][key] = (key === 'quantity' || key === 'rate') ? parseFloat(value) : value;
+      renderRows();
+    }
+
+    function updateStatus(index, value) {
+      if (value === "Sent to QB") {
+        const alreadySet = invoiceData.some((row, i) => row.status === "Sent to QB" && i !== index);
+        if (alreadySet) {
+          alert("Only one row can have status 'Sent to QB'.");
+          renderRows();
+          return;
+        }
+      }
+      invoiceData[index].status = value;
+    }
+
+    function saveRows() {
+      ZOHO.CRM.UI.Popup.getPageInfo().then(function(info) {
+        const recordId = info.EntityId;
+        const subformData = invoiceData.map(row => ({
+          Invoice_No: row.invoiceNo,
+          Terms: row.terms,
+          Invoice_Date: row.invoiceDate,
+          Description: row.description,
+          Quantity: row.quantity,
+          Rate: row.rate,
+          Invoice_Amount: row.amount,
+          Invoice_status: row.status
+        }));
+
+        const payload = {
+          data: [
+            {
+              id: recordId,
+              Invoice_data_deals: subformData
+            }
+          ]
+        };
+
+        ZOHO.CRM.API.updateRecord({Entity: "Deals", APIData: payload}).then(function(response) {
+          if (response.data[0].code === "SUCCESS") {
+            alert("Invoice subform saved successfully.");
+          } else {
+            alert("Failed to save: " + response.data[0].message);
+          }
+        });
+      });
+    }
+
+    function initializeZohoAndBindSave() {
+      if (typeof ZOHO !== 'undefined') {
+        ZOHO.embeddedApp.on("PageLoad", function(data) {
+          ZOHO.embeddedApp.init().then(() => {
+            document.getElementById("saveBtn").addEventListener("click", saveRows);
+          });
+        });
+      } else {
+        alert("ZOHO SDK not available. Try refreshing the page.");
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", initializeZohoAndBindSave);
+  </script>
+  <p>updated to v2</p>
+</body>
+</html>
+
+<!-- <!DOCTYPE html>
+<html>
+<head>
+  <title>Invoice Entry Widget</title>
+  <script src="https://js.zohostatic.com/zohocrm/v2.0/sdk.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 16px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    table, th, td {
+      border: 1px solid #ccc;
+    }
+    th, td {
+      padding: 8px;
+      text-align: left;
+    }
+    input, select {
+      width: 100%;
+      padding: 4px;
+    }
+    button {
+      padding: 6px 12px;
+    }
+  </style>
+</head>
+<body>
+  <h3>Invoice Items</h3>
+  <table id="invoiceTable">
+    <thead>
+      <tr>
+        <th>Invoice No.</th>
+        <th>Terms</th>
+        <th>Invoice Date</th>
+        <th>Description</th>
+        <th>Quantity</th>
+        <th>Rate ($)</th>
+        <th>Invoice Amount ($)</th>
+        <th>Invoice Status</th>
+      </tr>
+    </thead>
+    <tbody id="invoiceBody"></tbody>
+  </table>
+  <button onclick="addRow()">+ Add Row</button>
+  <button id="saveBtn">✅ Save to Zoho CRM</button>
+
+  <script>
+    let invoiceData = [];
+
+    function getYesterdayDate() {
+      const today = new Date();
+      today.setDate(today.getDate() - 1);
+      return today.toISOString().split('T')[0];
+    }
+
+    function addRow() {
+      const invoiceNo = invoiceData.length + 1;
+      const hasSentQB = invoiceData.some(row => row.status === 'Sent to QB');
+      const yesterday = getYesterdayDate();
+
+      const row = {
+        invoiceNo,
+        terms: invoiceNo === 1 ? "Due Upon Receipt" : "Net 15",
+        invoiceDate: yesterday,
+        description: "60% of project fees",
+        quantity: 1,
+        rate: "",
+        amount: "",
+        status: hasSentQB ? "" : "Sent to QB"
+      };
+
+      invoiceData.push(row);
+      renderRows();
+    }
+
+    function renderRows() {
+      const tbody = document.getElementById("invoiceBody");
+      tbody.innerHTML = "";
+      invoiceData.forEach((row, index) => {
+        const computedAmount = (row.quantity && row.rate) ? (row.quantity * row.rate).toFixed(2) : "";
+        invoiceData[index].amount = computedAmount;
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${row.invoiceNo}</td>
+          <td>
+            <select onchange="updateField(${index}, 'terms', this.value)">
+              <option value="Due Upon Receipt" ${row.terms === 'Due Upon Receipt' ? 'selected' : ''}>Due Upon Receipt</option>
+              <option value="Net 5" ${row.terms === 'Net 5' ? 'selected' : ''}>Net 5</option>
+              <option value="Net 10" ${row.terms === 'Net 10' ? 'selected' : ''}>Net 10</option>
+              <option value="Net 15" ${row.terms === 'Net 15' ? 'selected' : ''}>Net 15</option>
+              <option value="Net 30" ${row.terms === 'Net 30' ? 'selected' : ''}>Net 30</option>
+            </select>
+          </td>
+          <td><input type="date" value="${row.invoiceDate}" onchange="updateField(${index}, 'invoiceDate', this.value)"></td>
+          <td><input type="text" value="${row.description}" onchange="updateField(${index}, 'description', this.value)"></td>
+          <td><input type="number" min="1" value="${row.quantity}" onchange="updateField(${index}, 'quantity', this.value)"></td>
+          <td><input type="number" min="0" step="0.01" value="${row.rate}" onchange="updateField(${index}, 'rate', this.value)"></td>
           <td><input type="text" value="${computedAmount}" readonly></td>
           <td>
             <select onchange="updateStatus(${index}, this.value)">
@@ -179,6 +363,7 @@
       }
     });
   </script>
-  <p>updated to v1</p>
+  
 </body>
 </html>
+ -->
