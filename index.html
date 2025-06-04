@@ -1,0 +1,26 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Invoice Widget Test</title>
+  <script src="https://js.zohostatic.com/zohocrm/v2.0/sdk.js"></script>
+</head>
+<body>
+  <h2>Hello from Zoho CRM Widget</h2>
+  <p>If you see this, the widget is working inside the related list view.</p>
+  <script>
+    window.addEventListener("DOMContentLoaded", function () {
+      if (typeof ZOHO !== 'undefined') {
+        ZOHO.embeddedApp.on("PageLoad", function () {
+          ZOHO.embeddedApp.init().then(() => {
+            console.log("Widget initialized inside Zoho CRM.");
+          });
+        });
+        ZOHO.embeddedApp.init(); // fallback
+      } else {
+        document.body.innerHTML += "<p style='color:red;'>ZOHO SDK not loaded.</p>";
+      }
+    });
+  </script>
+</body>
+</html>
