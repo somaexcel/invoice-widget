@@ -1,27 +1,30 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>ZOHO SDK Test</title>
-  <script src="https://js.zohostatic.com/crm/v2.1/sdk.js"></script>
+  <title>ZOHO SDK Sanity Test</title>
+  <script src="https://js.zohostatic.com/crm/v2.0/sdk.js"></script>
 </head>
 <body>
-  <h2>ZOHO SDK Test Page</h2>
-  <p id="status">Waiting for SDK...</p>
+  <h2>ZOHO SDK Load Check</h2>
+  <p id="sdk-status" style="color:red; font-weight: bold;">Checking...</p>
 
   <script>
     document.addEventListener("DOMContentLoaded", function () {
-      const status = document.getElementById("status");
+      const status = document.getElementById("sdk-status");
+
       if (typeof ZOHO !== "undefined" && ZOHO.embeddedApp) {
-        status.textContent = "✅ SDK object detected";
+        status.innerText = "✅ ZOHO SDK detected. Initializing...";
+        status.style.color = "green";
+
         ZOHO.embeddedApp.init().then(() => {
-          status.textContent = "✅ ZOHO SDK initialized successfully";
-          ZOHO.embeddedApp.on("PageLoad", function(data) {
-            console.log("📦 PageLoad Event Fired", data);
-          });
+          status.innerText = "✅ SDK Initialized Successfully.";
+        }).catch(err => {
+          status.innerText = "❌ SDK init failed.";
+          console.error("Init error:", err);
         });
       } else {
-        status.textContent = "❌ ZOHO SDK not available. Check script or CRM embed context.";
-        console.error("ZOHO SDK not available");
+        status.innerText = "❌ ZOHO SDK NOT AVAILABLE. This page must be opened inside Zoho CRM widget.";
+        status.style.color = "red";
       }
     });
   </script>
