@@ -165,17 +165,21 @@
     }
 
     document.addEventListener("DOMContentLoaded", function () {
+      console.log("Checking ZOHO SDK:", typeof ZOHO);
       if (typeof ZOHO !== "undefined" && ZOHO.embeddedApp) {
         ZOHO.embeddedApp.on("PageLoad", function(data) {
+          console.log("PageLoad Event Triggered", data);
           ZOHO.embeddedApp.init().then(() => {
+            console.log("ZOHO SDK initialized ✅");
             document.getElementById("saveBtn").addEventListener("click", saveRows);
           });
         });
       } else {
+        console.error("ZOHO SDK not available ❌");
         alert("ZOHO SDK not available. Try refreshing the page.");
       }
     });
   </script>
-  <p>v1.1</p>
+
 </body>
 </html>
