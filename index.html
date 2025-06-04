@@ -1,32 +1,42 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>ZOHO SDK Sanity Test</title>
-  <script src="https://js.zohostatic.com/crm/v2.0/sdk.js"></script>
+  <title>Invoice Widget Test</title>
+    <script src="https://js.zohostatic.com/zohocrm/v2.0/sdk.js" defer></script>
 </head>
 <body>
-  <h2>ZOHO SDK Load Check</h2>
-  <p id="sdk-status" style="color:red; font-weight: bold;">Checking...</p>
+  <h2>Hello from Zoho CRM Widget</h2>
+  <p>If you see this, the widget is working inside the related list view.</p>
 
-  <script>
-    document.addEventListener("DOMContentLoaded", function () {
-      const status = document.getElementById("sdk-status");
+    <script defer>
+    window.addEventListener("DOMContentLoaded", function () {
+      // Give a small delay if ZOHO still appears undefined, though defer should handle most cases.
+      // This is a less ideal fallback, primarily for extremely fast DOM parsing or complex initializations.
+      setTimeout(() => {
+        if (typeof ZOHO !== 'undefined') {
+          console.log("ZOHO SDK is loaded.");
 
-      if (typeof ZOHO !== "undefined" && ZOHO.embeddedApp) {
-        status.innerText = "✅ ZOHO SDK detected. Initializing...";
-        status.style.color = "green";
+          // The 'PageLoad' event is crucial for widgets in Zoho CRM
+          ZOHO.embeddedApp.on("PageLoad", function () {
+            ZOHO.embeddedApp.init().then(() => {
+              console.log("Widget initialized inside Zoho CRM successfully.");
+            }).catch(error => {
+              console.error("Zoho widget initialization failed:", error);
+              document.body.innerHTML += `<p style='color:red;'>Widget Init Error: ${error.message || error}</p>`;
+            });
+          });
 
-        ZOHO.embeddedApp.init().then(() => {
-          status.innerText = "✅ SDK Initialized Successfully.";
-        }).catch(err => {
-          status.innerText = "❌ SDK init failed.";
-          console.error("Init error:", err);
-        });
-      } else {
-        status.innerText = "❌ ZOHO SDK NOT AVAILABLE. This page must be opened inside Zoho CRM widget.";
-        status.style.color = "red";
-      }
-    });
-  </script>
+          // This `init()` call outside `PageLoad` is a fallback or for specific widget types.
+          // For most related list widgets, `on("PageLoad")` is the primary entry point.
+          // If you uncomment this, be aware of potential double initialization if `PageLoad` also fires.
+          // ZOHO.embeddedApp.init();
+
+        } else {
+          console.error("ZOHO SDK not loaded or ZOHO object is undefined.");
+          document.body.innerHTML += "<p style='color:red;'>ZOHO SDK not loaded or ZOHO object is undefined. Check script loading order and network.</p>";
+        }
+      }, 100); // Small delay to allow ZOHO to be fully available
+    });
+  </script>
 </body>
 </html>
